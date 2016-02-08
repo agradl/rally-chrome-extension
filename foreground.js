@@ -1,7 +1,8 @@
 (function(){
   var highlighted = false,
-    idRegex = /^((DE|S)\d{1,20})$/g,
-    formattedIDs,
+    idRegex = new RegExp("((DE|S)\\d{1,20})"),
+    handlers = {},
+    nodes,
     index = -1;
 
   $(function(){
@@ -9,16 +10,11 @@
   });
 
   chrome.runtime.onMessage.addListener(function(message){
-    var title = document.title.replace(' | Rally','');
-    if (idRegex.test(title)){
-      copy(title);
-      return;
-    }
     if (!highlighted){
-      formattedIDs = getFormattedIDs();
+      nodes = getNodes();
     }
 
-    if (formattedIDs.length == 0){
+    if (nodes.length == 0){
       alert('no formatted IDs found on the page');
       return;
     }
@@ -26,19 +22,18 @@
     highlighted = true;
 
     selectNextId();
-
   });
 
   function selectNextId(){
     var i = index;
     i++;
     while (index !== i){
-      if (i >= formattedIDs.length){
+      if (i >= nodes.length){
         i = 0;
       } else {
-        var obj = formattedIDs[i];
+        var obj = nodes[i];
         if (isScrolledIntoView(obj.parent)){
-          index >= 0 && unhighlight(formattedIDs[index]);
+          index >= 0 && unhighlight(nodes[index]);
           highlight(obj);
           index = i;
           return;
@@ -48,10 +43,14 @@
     }
   }
 
-  function getFormattedIDs(){
+  function currentNode(){
+    return nodes[index];
+  }
+
+  function getNodes(){
     var ids = [];
-    $('body').nestedEach(idRegex, function(node, parent){
-      ids.push({id:node.nodeValue,node:node,parent:parent});
+    $('body').nestedEach(idRegex, function(id, node, parent){
+      ids.push({id:id,node:node,parent:parent});
     });
     return ids;
   }
@@ -60,8 +59,8 @@
       this.each(function() {
         var parent = $(this);
         parent.contents().each(function() {
-            if(this.nodeType === 3 && pattern.test(this.nodeValue)) {
-                action && action(this, parent);
+            if(this.nodeType === 3 && $(parent).is(":visible") && pattern.test(this.nodeValue)) {
+                action && action(pattern.exec(this.nodeValue)[0], this, parent);
             }
             else if(!$(this).hasClass('high')) {
                 $(this).nestedEach(pattern, action);
@@ -96,25 +95,22 @@
   }
 
   function handleKey(event){
-    if (event.keyCode == 13 && index > -1){
-      getArtifact(formattedIDs[index].id, function(message){
-        copy(message);
-        unhighlight(formattedIDs[index]);
-        highlighted = false;
-        index = -1;
-      });
+    var key = "" + event.keyCode + "+" + (event.shiftKey ? "SHIFT" : "");
+    if (handlers[key]){
+      handlers[key]()
+      reset();
     }
   }
 
   function getArtifact(formattedID, callback){
     var url;
     if (formattedID.indexOf('DE') > -1){
-      url = 'https://rally1.rallydev.com/slm/webservice/v2.0/defect?query=(FormattedID = "' + formattedID + '")'
+      url = 'https://rally1.rallydev.com/slm/webservice/v2.0/defect?query=(FormattedID = "' + formattedID + '")&fetch=ObjectID'
     } else {
-      url = 'https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement?query=(FormattedID = "' + formattedID + '")'
+      url = 'https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement?query=(FormattedID = "' + formattedID + '")&fetch=ObjectID'
     }
     $.getJSON(url, function(data){
-      callback(formattedID + ': ' + data.QueryResult.Results[0]._refObjectName);
+      callback(data.QueryResult.Results[0]);
     });
   }
 
@@ -130,4 +126,41 @@
 
       return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop));
   }
+
+  function reset(){
+    var node = currentNode();
+    node && unhighlight(node);
+    highlighted = false;
+    index = -1;
+  }
+
+  function getType(type){
+    return type === 'HierarchicalRequirement' ? 'userstory' : type.toLowerCase();
+  }
+
+  function getDetailUril(data){
+    return "https://rally1.rallydev.com/#/detail/" + getType(data._type) + "/" + data.ObjectID;
+  }
+
+  handlers["79+SHIFT"] = function(){ //O+SHIFT - copy "FormattedID: Name - detailUrl" to clipboard
+    var node = currentNode();
+    getArtifact(node.id, function(data){
+      copy(node.id + ': ' + data._refObjectName + " - " + getDetailUril(data));
+    });
+  };
+
+  handlers["80+SHIFT"] = function(){ //P+SHIFT - copy "FormattedID: Name" to clipboard
+    var node = currentNode();
+    getArtifact(node.id, function(data){
+      copy(node.id + ': ' + data._refObjectName);
+    });
+  };
+
+  handlers["68+SHIFT"] = function(){ //D+SHIFT - open the detail page for the selected formattedID
+    var node = currentNode();
+    getArtifact(node.id, function(data){
+      window.open(getDetailUril(data), "_blank");
+    });
+  };
+
 })();

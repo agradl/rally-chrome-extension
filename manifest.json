@@ -1,7 +1,8 @@
 {
-  "name": "COPY COMMIT MESSAGE",
+  "name": "Rally Extension",
   "version": "1.2",
   "manifest_version": 2,
+  "description": "see readme https://github.com/agradl/rally-chrome-extension",
   "background": {
     "persistent": false,
     "page":"background.html"
@@ -15,7 +16,7 @@
   ],
   "content_scripts":[
     {
-      "matches":["https://rally1.rallydev.com/*"],
+      "matches":["http://*/*", "https://*/*"],
       "js": ["jquery-2.1.4.min.js","visible.min.js","foreground.js"]
     }
   ],
@@ -25,7 +26,7 @@
         "default": "Ctrl+Shift+P",
         "mac": "Command+Shift+P"
       },
-      "description": "Copy title"
+      "description": "Select FormattedID on the page"
     }
   }
 }
