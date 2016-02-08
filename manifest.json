@@ -1,0 +1,31 @@
+{
+  "name": "COPY COMMIT MESSAGE",
+  "version": "1.2",
+  "manifest_version": 2,
+  "background": {
+    "persistent": false,
+    "page":"background.html"
+  },
+  "permissions": [
+    "activeTab"
+  ],
+  "web_accessible_resources":[
+    "background.js",
+    "jquery-2.1.4.min.js"
+  ],
+  "content_scripts":[
+    {
+      "matches":["https://rally1.rallydev.com/*"],
+      "js": ["jquery-2.1.4.min.js","visible.min.js","foreground.js"]
+    }
+  ],
+  "commands": {
+    "copy-title": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "Copy title"
+    }
+  }
+}
