@@ -139,13 +139,13 @@
   }
 
   function getDetailUril(data){
-    return "https://rally1.rallydev.com/#/detail/" + getType(data._type) + "/" + data.ObjectID;
+    return "[" + data._refObjectName.replace(/\[/g,'\\[').replace(/\]/g, '\\]') + "]" + "(https://rally1.rallydev.com/#/detail/" + getType(data._type) + "/" + data.ObjectID + ")";
   }
 
   handlers["79+SHIFT"] = function(){ //O+SHIFT - copy "FormattedID: Name - detailUrl" to clipboard
     var node = currentNode();
     getArtifact(node.id, function(data){
-      copy(node.id + ': ' + data._refObjectName + " - " + getDetailUril(data));
+      copy(node.id + ': ' + getDetailUril(data));
     });
   };
 
