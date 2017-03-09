@@ -6,7 +6,10 @@
     index = -1;
 
   $(function(){
-    $(document).keypress(handleKey);
+    if (document.getElementsByName('SecurityToken').length){
+      $(document).keypress(handleKey);
+      setRegex();
+    }
   });
 
   chrome.runtime.onMessage.addListener(function(message){
@@ -103,14 +106,31 @@
   }
 
   function getArtifact(formattedID, callback){
-    var url;
-    if (formattedID.indexOf('DE') > -1){
-      url = 'https://rally1.rallydev.com/slm/webservice/v2.0/defect?query=(FormattedID = "' + formattedID + '")&fetch=ObjectID'
-    } else {
-      url = 'https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement?query=(FormattedID = "' + formattedID + '")&fetch=ObjectID'
-    }
+    var url = toUrl("/slm/webservice/v2.0/artifact?query=(FormattedID = " + formattedID + ")&fetch=ObjectID,FormattedID,Name");
+
     $.getJSON(url, function(data){
-      callback(data.QueryResult.Results[0]);
+      var item = find(data.QueryResult.Results, 'FormattedID', formattedID);
+      if (item){
+        callback(item);
+      } else {
+        alert('could not find an artifact with formatted id ' + formattedID);
+      }
+      
+    });
+  }
+
+  function setRegex(){
+    var url = toUrl('/slm/webservice/v2.x/typedefinition?query=((ElementName = Defect) OR (ElementName = HierarchicalRequirement))&fetch=IDPrefix');
+    $.getJSON(url, function(data){
+      var defect = find(data.QueryResult.Results, '_refObjectName', 'Defect');
+      var userStory = find(data.QueryResult.Results, '_refObjectName', 'Hierarchical Requirement');
+      idRegex = new RegExp("((" + defect.IDPrefix + "|" + userStory.IDPrefix + ")\\d{1,20})");
+    });
+  }
+
+  function find(arr, attributeName, value){
+    return arr.find(function(el){
+      return el[attributeName] == value;
     });
   }
 
@@ -139,7 +159,11 @@
   }
 
   function getDetailUril(data){
-    return "[" + data._refObjectName.replace(/\[/g,'\\[').replace(/\]/g, '\\]') + "]" + "(https://rally1.rallydev.com/#/detail/" + getType(data._type) + "/" + data.ObjectID + ")";
+    return "[" + data._refObjectName.replace(/\[/g,'\\[').replace(/\]/g, '\\]') + "]" + "(" + toUrl("/#/detail/" + getType(data._type) + "/" + data.ObjectID) + ")";
+  }
+
+  function toUrl(path){
+    return this.document.URL.split('/')[0] + "//" + this.document.URL.split('/')[2] + path
   }
 
   handlers["79+SHIFT"] = function(){ //O+SHIFT - copy "FormattedID: Name - detailUrl" to clipboard
@@ -160,6 +184,29 @@
     var node = currentNode();
     getArtifact(node.id, function(data){
       window.open(getDetailUril(data), "_blank");
+    });
+  };
+
+  handlers["67+SHIFT"] = function(){ //C+SHIFT - open the detail page for the selected formattedID
+    var node = currentNode();
+    getArtifact(node.id, function(data){
+      var key = find([].slice.call(document.getElementsByTagName('meta')), 'name', 'SecurityToken').content;
+      for(var i = 0; i < 20; i++){
+        var body = {artifact:{}};
+        body.artifact[data._type] = {};
+        body.artifact.Name = data.Name + " [Copy " + i + "]";
+        var key = find([].slice.call(document.getElementsByTagName('meta')), 'name', 'SecurityToken').content;
+        $.ajax({
+          url: data._ref + "/copy?key=" + key,
+          type:'PUT',
+          dataType: 'json',
+          contentType: "application/json; charset=utf-8",
+          data: JSON.stringify(body),
+          success: function(result){
+            console.log(result);
+          }
+        });
+      }
     });
   };
 
