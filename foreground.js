@@ -220,6 +220,8 @@
             i--;
             if (i > 0){
               createCopy();
+            } else {
+              alert('done copying');
             }
           }
         });
