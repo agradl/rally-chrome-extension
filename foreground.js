@@ -120,11 +120,12 @@
   }
 
   function setRegex(){
-    var url = toUrl('/slm/webservice/v2.x/typedefinition?query=((ElementName = Defect) OR (ElementName = HierarchicalRequirement))&fetch=IDPrefix');
+    var url = toUrl('/slm/webservice/v2.x/typedefinition?query=(((ElementName = Defect) OR (ElementName = HierarchicalRequirement)) OR (ElementName = Task))&fetch=IDPrefix');
     $.getJSON(url, function(data){
       var defect = find(data.QueryResult.Results, '_refObjectName', 'Defect');
+      var task = find(data.QueryResult.Results, '_refObjectName', 'Task');
       var userStory = find(data.QueryResult.Results, '_refObjectName', 'Hierarchical Requirement');
-      idRegex = new RegExp("((" + defect.IDPrefix + "|" + userStory.IDPrefix + ")\\d{1,20})");
+      idRegex = new RegExp("((" + defect.IDPrefix + "|" + userStory.IDPrefix + "|" + task.IDPrefix + ")\\d{1,20})");
     });
   }
 
@@ -191,7 +192,9 @@
     var node = currentNode();
     getArtifact(node.id, function(data){
       var key = find([].slice.call(document.getElementsByTagName('meta')), 'name', 'SecurityToken').content;
-      for(var i = 0; i < 20; i++){
+      var i = 20;
+      
+      var createCopy = function() {
         var body = {artifact:{}};
         body.artifact[data._type] = {};
         body.artifact.Name = data.Name + " [Copy " + i + "]";
@@ -203,10 +206,14 @@
           contentType: "application/json; charset=utf-8",
           data: JSON.stringify(body),
           success: function(result){
-            console.log(result);
+            i--;
+            if (i > 0){
+              createCopy();
+            }
           }
         });
-      }
+      };
+      createCopy();
     });
   };
 
