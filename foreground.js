@@ -99,8 +99,9 @@
 
   function handleKey(event){
     var key = "" + event.keyCode + "+" + (event.shiftKey ? "SHIFT" : "");
-    if (handlers[key]){
-      handlers[key]()
+    var node = currentNode();
+    if (handlers[key] && node){
+      handlers[key](node);
       reset();
     }
   }
@@ -167,29 +168,25 @@
     return this.document.URL.split('/')[0] + "//" + this.document.URL.split('/')[2] + path
   }
 
-  handlers["79+SHIFT"] = function(){ //O+SHIFT - copy "FormattedID: Name - detailUrl" to clipboard
-    var node = currentNode();
+  handlers["79+SHIFT"] = function(node){ //O+SHIFT - copy "FormattedID: Name - detailUrl" to clipboard
     getArtifact(node.id, function(data){
       copy(node.id + ': ' + getDetailUril(data));
     });
   };
 
-  handlers["80+SHIFT"] = function(){ //P+SHIFT - copy "FormattedID: Name" to clipboard
-    var node = currentNode();
+  handlers["80+SHIFT"] = function(node){ //P+SHIFT - copy "FormattedID: Name" to clipboard
     getArtifact(node.id, function(data){
       copy(node.id + ': ' + data._refObjectName);
     });
   };
 
-  handlers["68+SHIFT"] = function(){ //D+SHIFT - open the detail page for the selected formattedID
-    var node = currentNode();
+  handlers["68+SHIFT"] = function(node){ //D+SHIFT - open the detail page for the selected formattedID
     getArtifact(node.id, function(data){
       window.open(getDetailUril(data), "_blank");
     });
   };
 
-  handlers["67+SHIFT"] = function(){ //C+SHIFT - open the detail page for the selected formattedID
-    var node = currentNode();
+  handlers["67+SHIFT"] = function(node){ //C+SHIFT - open the detail page for the selected formattedID
     getArtifact(node.id, function(data){
       var key = find([].slice.call(document.getElementsByTagName('meta')), 'name', 'SecurityToken').content;
       var i = 20;
