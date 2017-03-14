@@ -1,15 +1,18 @@
 (function(){
   var highlighted = false,
     idRegex = new RegExp("((DE|S)\\d{1,20})"),
+    inAgileCentral = false,
     handlers = {},
     nodes,
     index = -1;
 
   $(function(){
     if (document.getElementsByName('SecurityToken').length){
-      $(document).keypress(handleKey);
-      setRegex();
+      inAgileCentral = true;
     }
+    $(document).keypress(handleKey);
+    setRegex();
+  
   });
 
   chrome.runtime.onMessage.addListener(function(message){
@@ -85,6 +88,7 @@
     var newNode = $('<span>')
       .css('background-color', 'red')
       .css('color', 'black')
+      .css('padding', '3px')
       .css('font-weight', 'bolder')
       .text(obj.node.nodeValue.replace(idRegex, '$1'));
     obj.oldHtml = $(obj.parent).html();
@@ -165,7 +169,14 @@
   }
 
   function toUrl(path){
-    return this.document.URL.split('/')[0] + "//" + this.document.URL.split('/')[2] + path
+    return getHost() + path
+  }
+
+  function getHost(){
+      if (inAgileCentral){
+        return this.document.URL.split('/')[0] + "//" + this.document.URL.split('/')[2];
+      }
+      return 'https://rally1.rallydev.com';
   }
 
   handlers["79+SHIFT"] = function(node){ //O+SHIFT - copy "FormattedID: Name - detailUrl" to clipboard
@@ -187,6 +198,9 @@
   };
 
   handlers["67+SHIFT"] = function(node){ //C+SHIFT - open the detail page for the selected formattedID
+    if (!inAgileCentral){
+      return console.log('Rally-Chrome-Extension: You can only make changes when inside agile central');
+    }
     getArtifact(node.id, function(data){
       var key = find([].slice.call(document.getElementsByTagName('meta')), 'name', 'SecurityToken').content;
       var i = 20;
