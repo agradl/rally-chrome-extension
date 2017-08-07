@@ -9,10 +9,9 @@
   $(function(){
     if (document.getElementsByName('SecurityToken').length){
       inAgileCentral = true;
+      setRegex();
     }
     $(document).keypress(handleKey);
-    setRegex();
-  
   });
 
   chrome.runtime.onMessage.addListener(function(message){
