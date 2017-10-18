@@ -1,6 +1,7 @@
 (function(){
   var highlighted = false,
     idRegex = new RegExp("((DE|S)\\d{1,20})"),
+    regexFetched = false,
     inAgileCentral = false,
     handlers = {},
     nodes,
@@ -12,6 +13,9 @@
       setRegex();
     }
     $(document).keypress(handleKey);
+    if (inAgileCentral){
+      setRegex();
+    }
   });
 
   chrome.runtime.onMessage.addListener(function(message){
@@ -49,7 +53,7 @@
   }
 
   function currentNode(){
-    return nodes[index];
+    return nodes && nodes[index];
   }
 
   function getNodes(){
@@ -63,6 +67,9 @@
   $.fn.nestedEach = function(pattern, action) {
       this.each(function() {
         var parent = $(this);
+        if (this.tagName === 'IFRAME'){
+          return;
+        }
         parent.contents().each(function() {
             if(this.nodeType === 3 && $(parent).is(":visible") && pattern.test(this.nodeValue)) {
                 action && action(pattern.exec(this.nodeValue)[0], this, parent);
@@ -119,11 +126,15 @@
       } else {
         alert('could not find an artifact with formatted id ' + formattedID);
       }
-      
+
     });
   }
 
   function setRegex(){
+    if (regexFetched){
+      return;
+    }
+    regexFetched = true;
     var url = toUrl('/slm/webservice/v2.x/typedefinition?query=(((ElementName = Defect) OR (ElementName = HierarchicalRequirement)) OR (ElementName = Task))&fetch=IDPrefix');
     $.getJSON(url, function(data){
       var defect = find(data.QueryResult.Results, '_refObjectName', 'Defect');
@@ -203,7 +214,7 @@
     getArtifact(node.id, function(data){
       var key = find([].slice.call(document.getElementsByTagName('meta')), 'name', 'SecurityToken').content;
       var i = 20;
-      
+
       var createCopy = function() {
         var body = {artifact:{}};
         body.artifact[data._type] = {};
