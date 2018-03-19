@@ -1,10 +1,13 @@
 (function(){
   var highlighted = false,
-    idRegex = new RegExp("((DE|S)\\d{1,20})"),
+    idRegex = new RegExp("((DE|S|MI)\\d{1,20})"),
+    idToType = {
+      'MI': 'milestone'
+    }
     regexFetched = false,
     inAgileCentral = false,
     handlers = {},
-    nodes,
+    nodes = null,
     index = -1;
 
   $(function(){
@@ -117,7 +120,9 @@
   }
 
   function getArtifact(formattedID, callback){
-    var url = toUrl("/slm/webservice/v2.0/artifact?query=(FormattedID = " + formattedID + ")&fetch=ObjectID,FormattedID,Name");
+    var idPrefix = idRegex.exec(formattedID)[2] || 'US';
+    var typePath = idToType[idPrefix] || 'artifact';
+    var url = toUrl("/slm/webservice/v2.0/" + typePath + "?query=(FormattedID = " + formattedID + ")&fetch=ObjectID,FormattedID,Name");
 
     $.getJSON(url, function(data){
       var item = find(data.QueryResult.Results, 'FormattedID', formattedID);
@@ -135,12 +140,14 @@
       return;
     }
     regexFetched = true;
-    var url = toUrl('/slm/webservice/v2.x/typedefinition?query=(((ElementName = Defect) OR (ElementName = HierarchicalRequirement)) OR (ElementName = Task))&fetch=IDPrefix');
+    var url = toUrl('/slm/webservice/v2.x/typedefinition?query=((((ElementName = Defect) OR (ElementName = HierarchicalRequirement)) OR (ElementName = Task)) OR (ElementName = Milestone))&fetch=IDPrefix');
     $.getJSON(url, function(data){
       var defect = find(data.QueryResult.Results, '_refObjectName', 'Defect');
       var task = find(data.QueryResult.Results, '_refObjectName', 'Task');
       var userStory = find(data.QueryResult.Results, '_refObjectName', 'Hierarchical Requirement');
-      idRegex = new RegExp("((" + defect.IDPrefix + "|" + userStory.IDPrefix + "|" + task.IDPrefix + ")\\d{1,20})");
+      var milestone = find(data.QueryResult.Results, '_refObjectName', 'Milestone');
+      idToType = { [milestone.IDPrefix]: 'milestone' };
+      idRegex = new RegExp("((" + defect.IDPrefix + "|" + userStory.IDPrefix + "|" + task.IDPrefix + "|" + milestone.IDPrefix + ")\\d{1,20})");
     });
   }
 
