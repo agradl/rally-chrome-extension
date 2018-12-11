@@ -1,0 +1,67 @@
+<html>
+  <head>
+    <title>Water Popup</title>
+    <style type="text/css">
+      body {
+        width: 100%;
+      }
+      ul {
+        list-style-type: none;
+        padding:0;
+      }
+      .url {
+        padding: 3px;
+        white-space:nowrap;
+      }
+
+      ul li.green {
+        color: green;
+        /* color of bullet or square */
+
+        content: "\2022";
+        /* Unicode of character to precede the list item */
+
+        font-size: 1em;
+        /* em or %*/
+
+        padding-right: 1.1225em;
+        /* use em*/
+
+        position: relative;
+        top: 0em;
+        /* use em or % */
+      }
+
+      ul li.red::before {
+        color: red;
+        /* color of bullet or square */
+
+        content: "\2022";
+        /* Unicode of character to precede the list item */
+
+        font-size: 1em;
+        /* em or %*/
+
+        padding-right: 1.1225em;
+        /* use em*/
+
+        position: relative;
+        top: 0em;
+        /* use em or % */
+
+      }
+      a:visited {
+        color:black;
+      }
+    </style>
+  </head>
+  <body>
+      <ul id="urls"></ul>
+
+      <input id="url" placeholder="enter a jenkins api url" type=text />
+      <button id="addButton">Add</button>
+      <button id="clearButton">Clear</button>
+      <script src="../jquery-2.1.4.min.js" type="text/javascript" ></script>
+      <script src="popup.js"></script>
+  </body>
+</html>

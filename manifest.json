@@ -1,14 +1,21 @@
 {
   "name": "Rally Extension",
-  "version": "1.2",
+  "version": "1.4",
   "manifest_version": 2,
   "description": "see readme https://github.com/agradl/rally-chrome-extension",
   "background": {
     "persistent": false,
     "page":"background.html"
   },
+  "browser_action":{
+    "default_popup":"popup/popup.html",
+    "default_icon": {
+      "32": "popup/headshot.png"
+    }
+  },
   "permissions": [
-    "activeTab"
+    "activeTab",
+    "storage"
   ],
   "web_accessible_resources":[
     "background.js",

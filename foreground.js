@@ -13,12 +13,9 @@
   $(function(){
     if (document.getElementsByName('SecurityToken').length){
       inAgileCentral = true;
-      setRegex();
+      setTimeout(setRegex, 1000);
     }
     $(document).keypress(handleKey);
-    if (inAgileCentral){
-      setRegex();
-    }
   });
 
   chrome.runtime.onMessage.addListener(function(message){
@@ -111,7 +108,7 @@
   }
 
   function handleKey(event){
-    var key = "" + event.keyCode + "+" + (event.shiftKey ? "SHIFT" : "");
+    var key = "" + event.key.toLowerCase() + "+" + ((event.shiftKey || event.ctrlKey || event.ctrlKey) ? "MOD" : "");
     var node = currentNode();
     if (handlers[key] && node){
       handlers[key](node);
@@ -136,7 +133,8 @@
   }
 
   function setRegex(){
-    if (regexFetched){
+    if (chrome.storage && chrome.storage.sync.get('regex') || regexFetched){
+      idRegex = new RegExp(chrome.storage.sync.get('regex'));
       return;
     }
     regexFetched = true;
@@ -147,7 +145,9 @@
       var userStory = find(data.QueryResult.Results, '_refObjectName', 'Hierarchical Requirement');
       var milestone = find(data.QueryResult.Results, '_refObjectName', 'Milestone');
       idToType = { [milestone.IDPrefix]: 'milestone' };
-      idRegex = new RegExp("((" + defect.IDPrefix + "|" + userStory.IDPrefix + "|" + task.IDPrefix + "|" + milestone.IDPrefix + ")\\d{1,20})");
+      var regexString = "((" + defect.IDPrefix + "|" + userStory.IDPrefix + "|" + task.IDPrefix + "|" + milestone.IDPrefix + ")\\d{1,20})";
+      idRegex = new RegExp(regexString);
+      chrome.storage.sync.set('regex', regexString)
     });
   }
 
@@ -196,25 +196,25 @@
       return 'https://rally1.rallydev.com';
   }
 
-  handlers["79+SHIFT"] = function(node){ //O+SHIFT - copy "FormattedID: Name - detailUrl" to clipboard
+  handlers["o+MOD"] = function(node){ //O+MOD - copy "FormattedID: Name - detailUrl" to clipboard
     getArtifact(node.id, function(data){
       copy(node.id + ': ' + getDetailUril(data));
     });
   };
 
-  handlers["80+SHIFT"] = function(node){ //P+SHIFT - copy "FormattedID: Name" to clipboard
+  handlers["p+MOD"] = function(node){ //P+MOD - copy "FormattedID: Name" to clipboard
     getArtifact(node.id, function(data){
       copy(node.id + ': ' + data._refObjectName);
     });
   };
 
-  handlers["68+SHIFT"] = function(node){ //D+SHIFT - open the detail page for the selected formattedID
+  handlers["d+MOD"] = function(node){ //D+MOD - open the detail page for the selected formattedID
     getArtifact(node.id, function(data){
       window.open(getDetailUril(data), "_blank");
     });
   };
 
-  handlers["67+SHIFT"] = function(node){ //C+SHIFT - open the detail page for the selected formattedID
+  handlers["c+MOD"] = function(node){ //C+MOD - open the detail page for the selected formattedID
     if (!inAgileCentral){
       return console.log('Rally-Chrome-Extension: You can only make changes when inside agile central');
     }
