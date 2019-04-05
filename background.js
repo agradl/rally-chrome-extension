@@ -1,4 +1,18 @@
-
+var idRegex = new RegExp("((DE|S|MI)\\d{1,20})");
+var idToType = {
+  'MI': 'milestone'
+};
+var handlers = {
+  copyMarkdown: withArtifact(function(item, id){
+    copy(id + ': ' + getDetailUril(item));
+  }),
+  copyMarkdown: withArtifact(function(item, id){
+    copy(id + ': ' + item._refObjectName);
+  }),
+  navDetail: withArtifact(function(item){
+    window.open(getDetailUril(item), "_blank");
+  })
+};
 
 chrome.commands.onCommand.addListener(function(command) {
     sendMessage('copy');
@@ -20,10 +34,55 @@ function copy(text){
       input.select();
       document.execCommand('Copy');
       document.body.removeChild(input);
+      alert('copied "' + text + '" to clipboard');
 }
 
-
-
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){
-  copy(request.text);
+  var action = request.action;
+  var payload = request.payload;
+  handlers[action](payload);
 });
+
+function withArtifact(callback){
+  return function(payload){
+    return getArtifact(payload, callback);
+  }
+}
+
+function getArtifact(formattedID, callback){
+  var idPrefix = idRegex.exec(formattedID)[2] || 'US';
+  var typePath = idToType[idPrefix] || 'artifact';
+  var url = toUrl("/slm/webservice/v2.0/" + typePath + "?query=(FormattedID = " + formattedID + ")&fetch=ObjectID,FormattedID,Name");
+
+  $.getJSON(url, function(data){
+    var item = find(data.QueryResult.Results, 'FormattedID', formattedID);
+    if (item){
+      callback(item, formattedID);
+    } else {
+      alert('could not find an artifact with formatted id ' + formattedID);
+    }
+
+  });
+}
+
+function find(arr, attributeName, value){
+  return arr.find(function(el){
+    return el[attributeName] == value;
+  });
+}
+
+function getType(type){
+  return type === 'HierarchicalRequirement' ? 'userstory' : type.toLowerCase();
+}
+
+function getDetailUril(data){
+  return "[" + data._refObjectName.replace(/\[/g,'\\[').replace(/\]/g, '\\]') + "]" + "(" + toUrl("/#/detail/" + getType(data._type) + "/" + data.ObjectID) + ")";
+}
+
+function toUrl(path){
+  return getHost() + path
+}
+
+function getHost(){
+    return 'https://rally1.rallydev.com';
+}
