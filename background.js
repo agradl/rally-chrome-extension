@@ -4,13 +4,13 @@ var idToType = {
 };
 var handlers = {
   copyMarkdown: withArtifact(function(item, id){
-    copy(id + ': ' + getDetailUril(item));
+    copy(getMarkdownLink(item));
   }),
-  copyMarkdown: withArtifact(function(item, id){
-    copy(id + ': ' + item._refObjectName);
+  copySimple: withArtifact(function(item, id){
+    copy(id + ' - ' + item._refObjectName);
   }),
   navDetail: withArtifact(function(item){
-    window.open(getDetailUril(item), "_blank");
+    window.open(toUrl("/#/detail/" + getType(item._type) + "/" + item.ObjectID), "_blank");
   })
 };
 
@@ -75,8 +75,8 @@ function getType(type){
   return type === 'HierarchicalRequirement' ? 'userstory' : type.toLowerCase();
 }
 
-function getDetailUril(data){
-  return "[" + data._refObjectName.replace(/\[/g,'\\[').replace(/\]/g, '\\]') + "]" + "(" + toUrl("/#/detail/" + getType(data._type) + "/" + data.ObjectID) + ")";
+function getMarkdownLink(data){
+  return "[" + data.FormattedID + ' - ' + data._refObjectName.replace(/\[/g,'\\[').replace(/\]/g, '\\]') + "]" + "(" + toUrl("/#/detail/" + getType(data._type) + "/" + data.ObjectID) + ")";
 }
 
 function toUrl(path){

@@ -126,26 +126,17 @@
     index = -1;
   }
 
-  handlers["o+MOD"] = function(node){ //O+MOD - copy "FormattedID: Name - detailUrl" to clipboard
-    action('copyMarkdown', node.id);
-    // getArtifact(node.id, function(data){
-    //   copy(node.id + ': ' + getDetailUril(data));
-    // });
-  };
+  function registerHandler(keys, actionName, info){
+    console.info("Rally chrome extension: registering action " + actionName + ". To execute, press " + keys + " after highlighting an id.", info);  
+    handlers[keys] = function(node){ 
+      console.info("Rally chrome extension: invoking action", actionName);
+      action(actionName, node.id);
+    };
+  }
 
-  handlers["p+MOD"] = function(node){ //P+MOD - copy "FormattedID: Name" to clipboard
-    action('copySimple', node.id);
-    // getArtifact(node.id, function(data){
-    //   copy(node.id + ': ' + data._refObjectName);
-    // });
-  };
-
-  handlers["d+MOD"] = function(node){ //D+MOD - open the detail page for the selected formattedID
-    action('navDetail', node.id);
-    // getArtifact(node.id, function(data){
-    //   window.open(getDetailUril(data), "_blank");
-    // });
-  };
+  registerHandler('o+MOD', 'copyMarkdown', 'Puts markdown on clipboard [FormattedID - Name](detail link)');
+  registerHandler('p+MOD', 'copySimple', 'Puts formatted id and name on clipboard FormattedID - Name')
+  registerHandler('d+MOD', 'navDetail', 'Opens a new tab to the detail page of the item')
 
   // handlers["c+MOD"] = function(node){ //C+MOD - open the detail page for the selected formattedID
   //   if (!inAgileCentral){
