@@ -15,7 +15,7 @@ var handlers = {
 };
 
 chrome.commands.onCommand.addListener(function(command) {
-    sendMessage('copy');
+    sendMessage({action:'copy'});
 });
 
 function sendMessage(message){
@@ -34,7 +34,7 @@ function copy(text){
       input.select();
       document.execCommand('Copy');
       document.body.removeChild(input);
-      alert('copied "' + text + '" to clipboard');
+      sendMessage({action:'alert', text:'copied "' + text + '" to clipboard'});
 }
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){

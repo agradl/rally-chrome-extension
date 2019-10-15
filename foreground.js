@@ -10,8 +10,13 @@
   });
 
   chrome.runtime.onMessage.addListener(function(message){
+    console.log('message recieved: ', message);
     if (!highlighted){
       nodes = getNodes();
+    }
+    if (message.action === 'alert'){
+      alert(message.text);
+      return;
     }
 
     if (nodes.length == 0){
